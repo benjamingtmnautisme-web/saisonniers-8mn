@@ -100,13 +100,14 @@ function parseSheetData(values, sheetName) {
   for (let i = 0; i < values.length; i++) {
     const row = values[i];
     const cellA = String(row[0] || '').trim();
-    if (!cellA || isNaN(parseInt(cellA))) continue;
+    // Accepter numéros ET prénoms (texte non vide, pas un header)
+    if (!cellA) continue;
+    const isHeader = ['PLANNING', 'GRANVILLE', 'JULLOUVILLE', 'BREHAL', 'BREVILLE', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche', 'Dér/Cat', 'Enfant', 'Matin', 'A-M'].includes(cellA);
+    if (isHeader) continue;
 
-    const num = parseInt(cellA);
     const row2 = values[i + 1] || [];
-
-    // Colonne B = nom (remplacera le numéro plus tard)
-    const nom = String(row[1] || '').trim() || String(num);
+    // Nom = cellA si c'est un prénom, sinon cellB
+    const nom = isNaN(parseInt(cellA)) ? cellA : (String(row[1] || '').trim() || cellA);
 
     const creneaux = [];
     for (const j of JOURS_COLS) {
