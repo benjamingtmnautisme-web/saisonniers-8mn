@@ -5,8 +5,9 @@ const TENANT_ID     = process.env.AZURE_TENANT_ID;
 const CLIENT_ID     = process.env.AZURE_CLIENT_ID;
 const CLIENT_SECRET = process.env.AZURE_CLIENT_SECRET;
 
-const SITE_NAME   = 'Service Nautisme - Documents';
-const FILE_PATH   = 'Général/Plannings activités et équipes/Saison 2026/Planning_moniteurs_CQP_2026.xlsm';
+const SHAREPOINT_HOST = 'splgtm.sharepoint.com';
+const SITE_PATH       = '/sites/ServiceNautisme77';
+const FILE_ID         = '0bd11406-355c-4199-94e2-b4ab72e20d3c';
 
 // Mapping colonnes -> jours (section Granville, feuille semaine)
 const JOURS_COLS = [
@@ -71,25 +72,22 @@ async function getToken() {
 
 async function getSiteId(token) {
   const res = await httpsGet(
-    `https://graph.microsoft.com/v1.0/sites?search=Service+Nautisme`,
+    `https://graph.microsoft.com/v1.0/sites/${SHAREPOINT_HOST}:${SITE_PATH}`,
     { Authorization: `Bearer ${token}` }
   );
   const json = JSON.parse(res.body);
-  const site = json.value && json.value[0];
-  if (!site) throw new Error('Site non trouvé');
-  return site.id;
+  if (!json.id) throw new Error('Site non trouvé: ' + res.body);
+  return json.id;
 }
 
 async function getFileContent(token, siteId) {
-  // Encoder le chemin
-  const encoded = FILE_PATH.split('/').map(s => encodeURIComponent(s)).join('/');
-  const url = `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:/${encoded}:/workbook/worksheets`;
+  const url = `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${FILE_ID}/workbook/worksheets`;
   const res = await httpsGet(url, { Authorization: `Bearer ${token}` });
   return JSON.parse(res.body);
 }
 
 async function getSheetRange(token, siteId, sheetId, range) {
-  const url = `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:/${FILE_PATH.split('/').map(s => encodeURIComponent(s)).join('/')}:/workbook/worksheets/${sheetId}/range(address='${range}')`;
+  const url = `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${FILE_ID}/workbook/worksheets/${sheetId}/range(address='${range}')`;
   const res = await httpsGet(url, { Authorization: `Bearer ${token}` });
   return JSON.parse(res.body);
 }
