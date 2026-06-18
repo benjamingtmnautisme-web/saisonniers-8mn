@@ -1,1 +1,861 @@
-<h1>OK</h1>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>8 Milles Nautic — Espace Saisonniers</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bleu-marine: #005d83;
+    --bleu-ciel: #00a6d8;
+    --jaune: #ffcc00;
+    --orange: #f18700;
+    --vert: #86bc25;
+    --blanc: #ffffff;
+    --gris-clair: #f4f6f8;
+    --gris-texte: #444;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bleu-marine);
+    min-height: 100vh;
+    color: var(--gris-texte);
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--bleu-marine);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--bleu-ciel);
+  }
+  .header-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-logo-badge {
+    width: 40px; height: 40px;
+    background: var(--bleu-ciel);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: white; font-size: 14px;
+  }
+  .header-title { color: white; font-size: 15px; font-weight: 600; line-height: 1.2; }
+  .header-subtitle { color: var(--bleu-ciel); font-size: 11px; font-weight: 400; }
+  .header-user {
+    display: flex; align-items: center; gap: 8px;
+    color: white; font-size: 13px;
+  }
+  .header-user-name { font-weight: 600; color: var(--jaune); }
+  .btn-logout {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white; padding: 5px 12px;
+    border-radius: 20px; font-size: 12px; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-logout:hover { background: rgba(255,255,255,0.2); }
+
+  /* ── NAV TABS ── */
+  .nav {
+    background: var(--bleu-marine);
+    padding: 0 16px;
+    display: flex; gap: 4px;
+    overflow-x: auto;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-tab {
+    padding: 10px 16px;
+    color: rgba(255,255,255,0.6);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; white-space: nowrap;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .nav-tab:hover { color: white; }
+  .nav-tab.active {
+    color: var(--jaune);
+    border-bottom-color: var(--jaune);
+  }
+  .nav-tab .icon { font-size: 16px; }
+
+  /* ── CONTENU ── */
+  .app { display: none; flex-direction: column; min-height: 100vh; }
+  .app.visible { display: flex; }
+
+  .content {
+    background: var(--gris-clair);
+    flex: 1;
+    padding: 20px 16px;
+  }
+
+  /* ── PAGE AUTH ── */
+  #page-auth {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    background: var(--bleu-marine);
+  }
+
+  .auth-card {
+    background: white;
+    border-radius: 16px;
+    padding: 40px 32px;
+    width: 100%; max-width: 360px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .auth-logo {
+    width: 64px; height: 64px;
+    background: var(--bleu-marine);
+    border-radius: 16px;
+    margin: 0 auto 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+  }
+  .auth-title {
+    font-size: 20px; font-weight: 700;
+    color: var(--bleu-marine); margin-bottom: 4px;
+  }
+  .auth-subtitle {
+    font-size: 13px; color: #888; margin-bottom: 28px;
+  }
+  .auth-input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 20px; letter-spacing: 6px;
+    text-align: center; font-weight: 700;
+    color: var(--bleu-marine);
+    outline: none; transition: border 0.2s;
+    margin-bottom: 16px;
+  }
+  .auth-input:focus { border-color: var(--bleu-ciel); }
+  .auth-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--bleu-ciel);
+    color: white; border: none;
+    border-radius: 10px; font-size: 15px;
+    font-weight: 600; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .auth-btn:hover { background: var(--bleu-marine); }
+  .auth-error {
+    color: #e53935; font-size: 13px;
+    margin-top: 10px; display: none;
+  }
+
+  /* ── PAGE PRÉNOM ── */
+  #page-prenom {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    background: var(--bleu-marine);
+  }
+  .prenom-card {
+    background: white;
+    border-radius: 16px;
+    padding: 32px 24px;
+    width: 100%; max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .prenom-title {
+    font-size: 18px; font-weight: 700;
+    color: var(--bleu-marine); margin-bottom: 6px;
+    text-align: center;
+  }
+  .prenom-subtitle {
+    font-size: 13px; color: #888;
+    text-align: center; margin-bottom: 24px;
+  }
+  .prenom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .prenom-btn {
+    padding: 14px 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    background: white; cursor: pointer;
+    font-size: 14px; font-weight: 600;
+    color: var(--bleu-marine);
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .prenom-btn:hover {
+    border-color: var(--bleu-ciel);
+    background: #e8f6fc;
+    color: var(--bleu-ciel);
+  }
+
+  /* ── MODULES ── */
+  .module { display: none; }
+  .module.active { display: block; }
+
+  .module-title {
+    font-size: 18px; font-weight: 700;
+    color: var(--bleu-marine); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* ── PLANNING ── */
+  .planning-semaine {
+    background: white; border-radius: 12px;
+    padding: 16px; margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .planning-semaine-titre {
+    font-size: 13px; font-weight: 600;
+    color: var(--bleu-ciel); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 12px;
+  }
+  .planning-creneau {
+    display: flex; gap: 12px;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .planning-creneau:last-child { border-bottom: none; }
+  .planning-jour {
+    width: 64px; flex-shrink: 0;
+    font-size: 12px; font-weight: 600;
+    color: var(--bleu-marine); text-align: center;
+    background: var(--gris-clair);
+    border-radius: 6px; padding: 4px 6px;
+  }
+  .planning-info { flex: 1; }
+  .planning-poste {
+    font-size: 13px; font-weight: 600; color: var(--bleu-marine);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .planning-stage {
+    font-size: 12px; color: #555; margin-top: 3px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .planning-stage-nom {
+    font-size: 12px; font-weight: 600;
+    color: var(--bleu-ciel); margin-top: 4px;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .planning-session-tag {
+    display: inline-block; padding: 1px 7px;
+    border-radius: 20px; font-size: 10px; font-weight: 700;
+    background: var(--jaune); color: #7a5c00; margin-left: 6px;
+  }
+  .planning-repos {
+    font-size: 13px; color: #bbb; font-style: italic;
+  }
+
+  /* ── ACTUALITÉS ── */
+  .actu-card {
+    background: white; border-radius: 12px;
+    padding: 16px; margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-left: 4px solid var(--bleu-ciel);
+  }
+  .actu-date { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+  .actu-titre { font-size: 14px; font-weight: 600; color: var(--bleu-marine); margin-bottom: 6px; }
+  .actu-texte { font-size: 13px; color: #666; line-height: 1.5; }
+
+  /* ── MÉTÉO / WEBCAM ── */
+  .meteo-tabs {
+    display: flex; gap: 8px; margin-bottom: 16px;
+    overflow-x: auto; padding-bottom: 4px;
+  }
+  .meteo-tabs::-webkit-scrollbar { display: none; }
+  .meteo-tab-btn {
+    padding: 8px 16px;
+    border-radius: 20px; border: 2px solid #ddd;
+    background: white; cursor: pointer;
+    font-size: 13px; font-weight: 600; white-space: nowrap;
+    color: #888; transition: all 0.2s;
+  }
+  .meteo-tab-btn.active {
+    border-color: var(--bleu-ciel);
+    background: var(--bleu-ciel); color: white;
+  }
+  .meteo-panel { display: none; }
+  .meteo-panel.active { display: block; }
+  .meteo-section-title {
+    font-size: 12px; font-weight: 600; color: #aaa;
+    text-transform: uppercase; letter-spacing: 1px;
+    margin: 16px 0 8px;
+  }
+  .iframe-wrapper {
+    border-radius: 12px; overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 16px;
+  }
+  .iframe-wrapper iframe {
+    width: 100%; border: none; display: block;
+  }
+  .webcam-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 16px;
+  }
+  .webcam-card {
+    background: white; border-radius: 10px;
+    overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .webcam-label {
+    padding: 6px 10px; font-size: 11px;
+    font-weight: 600; color: var(--bleu-marine);
+    background: var(--gris-clair);
+  }
+  .webcam-img {
+    width: 100%; height: 100px;
+    background: #ddd; display: flex;
+    align-items: center; justify-content: center;
+    color: #aaa; font-size: 12px;
+  }
+
+  /* ── MAINTENANCE ── */
+  .tache-card {
+    background: white; border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .tache-statut {
+    width: 20px; height: 20px; flex-shrink: 0;
+    border-radius: 50%; border: 2px solid #ddd;
+    cursor: pointer; margin-top: 2px;
+    transition: all 0.2s;
+  }
+  .tache-statut.done { background: var(--vert); border-color: var(--vert); }
+  .tache-titre { font-size: 14px; font-weight: 600; color: var(--bleu-marine); }
+  .tache-meta { font-size: 12px; color: #aaa; margin-top: 2px; }
+  .tache-priorite {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 20px; font-size: 11px; font-weight: 600;
+    margin-top: 4px;
+  }
+  .priorite-haute { background: #fdecea; color: #e53935; }
+  .priorite-normale { background: #e8f6fc; color: var(--bleu-ciel); }
+
+  .btn-nouvelle-tache {
+    display: flex; align-items: center; gap: 8px;
+    padding: 14px 20px;
+    background: var(--bleu-ciel); color: white;
+    border: none; border-radius: 12px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; width: 100%;
+    justify-content: center; margin-bottom: 16px;
+    transition: background 0.2s;
+  }
+  .btn-nouvelle-tache:hover { background: var(--bleu-marine); }
+
+  /* ── MOBY DICK ── */
+  .moby-header {
+    background: var(--bleu-marine);
+    border-radius: 12px; padding: 20px;
+    text-align: center; margin-bottom: 16px;
+    color: white;
+  }
+  .moby-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .moby-subtitle { font-size: 13px; color: var(--bleu-ciel); }
+  .classement-row {
+    background: white; border-radius: 10px;
+    padding: 12px 16px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .classement-rang {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; flex-shrink: 0;
+  }
+  .rang-1 { background: #FFD700; color: #7a5c00; }
+  .rang-2 { background: #C0C0C0; color: #555; }
+  .rang-3 { background: #cd7f32; color: white; }
+  .rang-other { background: var(--gris-clair); color: #888; }
+  .classement-nom { font-weight: 600; color: var(--bleu-marine); flex: 1; }
+  .classement-points { font-size: 13px; color: #888; }
+
+  /* ── MODAL TÂCHE ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 100;
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: 20px 20px 0 0;
+    padding: 24px 20px 32px; width: 100%; max-width: 480px;
+  }
+  .modal-title { font-size: 17px; font-weight: 700; color: var(--bleu-marine); margin-bottom: 20px; }
+  .modal-field { margin-bottom: 14px; }
+  .modal-label { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 6px; display: block; }
+  .modal-input, .modal-select, .modal-textarea {
+    width: 100%; padding: 12px 14px;
+    border: 2px solid #e0e0e0; border-radius: 10px;
+    font-size: 14px; outline: none; font-family: inherit;
+    transition: border 0.2s;
+  }
+  .modal-input:focus, .modal-select:focus, .modal-textarea:focus {
+    border-color: var(--bleu-ciel);
+  }
+  .modal-textarea { resize: vertical; min-height: 80px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-cancel {
+    flex: 1; padding: 13px; border: 2px solid #ddd;
+    border-radius: 10px; background: white;
+    font-size: 14px; font-weight: 600; cursor: pointer; color: #888;
+  }
+  .modal-submit {
+    flex: 2; padding: 13px; border: none;
+    border-radius: 10px; background: var(--bleu-ciel);
+    color: white; font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .modal-submit:hover { background: var(--bleu-marine); }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .prenom-grid { grid-template-columns: 1fr 1fr; }
+    .webcam-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     PAGE AUTH
+══════════════════════════════════════ -->
+<div id="page-auth">
+  <div class="auth-card">
+    <div class="auth-logo">⛵</div>
+    <div class="auth-title">Espace Saisonniers</div>
+    <div class="auth-subtitle">8 Milles Nautic — Été 2026</div>
+    <input class="auth-input" type="password" id="code-input"
+           placeholder="••••••" maxlength="8"
+           autocomplete="off">
+    <button class="auth-btn" onclick="verifierCode()">Accéder</button>
+    <div class="auth-error" id="auth-error">Code incorrect, réessaie !</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE PRÉNOM
+══════════════════════════════════════ -->
+<div id="page-prenom">
+  <div class="prenom-card">
+    <div class="prenom-title">👋 Qui es-tu ?</div>
+    <div class="prenom-subtitle">Choisis ton prénom pour voir ton planning</div>
+    <div class="prenom-grid" id="prenom-grid">
+      <!-- Généré dynamiquement -->
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP PRINCIPALE
+══════════════════════════════════════ -->
+<div class="app" id="main-app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logo">
+      <div class="header-logo-badge">8M</div>
+      <div>
+        <div class="header-title">8 Milles Nautic</div>
+        <div class="header-subtitle">Espace Saisonniers</div>
+      </div>
+    </div>
+    <div class="header-user">
+      <span>Bonjour, <span class="header-user-name" id="display-prenom"></span></span>
+      <button class="btn-logout" onclick="deconnexion()">Quitter</button>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav">
+    <div class="nav-tab active" onclick="showModule('planning', this)">
+      <span class="icon">📅</span> Planning
+    </div>
+    <div class="nav-tab" onclick="showModule('actu', this)">
+      <span class="icon">📰</span> Actu
+    </div>
+    <div class="nav-tab" onclick="showModule('meteo', this)">
+      <span class="icon">🌤️</span> Météo
+    </div>
+    <div class="nav-tab" onclick="showModule('moby', this)">
+      <span class="icon">🏆</span> Moby Dick
+    </div>
+    <div class="nav-tab" onclick="showModule('maintenance', this)">
+      <span class="icon">🔧</span> Maintenance
+    </div>
+  </div>
+
+  <!-- Contenu -->
+  <div class="content">
+
+    <!-- ── MODULE PLANNING ── -->
+    <div class="module active" id="module-planning">
+      <div class="module-title">📅 Mon planning</div>
+      <div id="planning-content">
+        <!-- Généré dynamiquement par renderPlanning() -->
+      </div>
+    </div>
+
+    <!-- ── MODULE ACTU ── -->
+    <div class="module" id="module-actu">
+      <div class="module-title">📰 Actualités</div>
+      <div class="actu-card">
+        <div class="actu-date">18 juin 2026</div>
+        <div class="actu-titre">🏄 Bienvenue à l'équipe saisonniers 2026 !</div>
+        <div class="actu-texte">Toute l'équipe permanente est ravie de vous accueillir pour cette saison. N'hésitez pas à solliciter vos responsables de base.</div>
+      </div>
+      <div class="actu-card">
+        <div class="actu-date">17 juin 2026</div>
+        <div class="actu-titre">📋 Réunion de pré-saison</div>
+        <div class="actu-texte">La réunion de rentrée aura lieu le 5 juillet à 9h à la base de Granville. Présence obligatoire pour tous les saisonniers.</div>
+      </div>
+      <p style="color:#aaa; font-size:13px; text-align:center; margin-top:8px;">
+        ⚠️ Fil d'actu à brancher sur Firestore
+      </p>
+    </div>
+
+    <!-- ── MODULE MÉTÉO / WEBCAM ── -->
+    <div class="module" id="module-meteo">
+      <div class="module-title">🌤️ Météo & Webcams</div>
+      <div class="meteo-tabs">
+        <button class="meteo-tab-btn active" onclick="showBase('granville', this)">Granville</button>
+        <button class="meteo-tab-btn" onclick="showBase('brehal', this)">Bréhal</button>
+        <button class="meteo-tab-btn" onclick="showBase('jullouville', this)">Jullouville</button>
+        <button class="meteo-tab-btn" onclick="showBase('breville', this)">Bréville</button>
+      </div>
+
+      <div class="meteo-panel active" id="base-granville">
+        <div class="meteo-section-title">Windguru</div>
+        <div class="iframe-wrapper">
+          <iframe src="https://www.windguru.cz/49281" height="350" scrolling="no"></iframe>
+        </div>
+        <div class="meteo-section-title">Webcam</div>
+        <div class="webcam-card">
+          <div class="webcam-label">📷 Granville — Port</div>
+          <div class="webcam-img">[ iframe webcam à configurer ]</div>
+        </div>
+      </div>
+
+      <div class="meteo-panel" id="base-brehal">
+        <div class="meteo-section-title">Windguru</div>
+        <div class="iframe-wrapper">
+          <iframe src="https://www.windguru.cz/49281" height="350" scrolling="no"></iframe>
+        </div>
+        <div class="meteo-section-title">Webcam</div>
+        <div class="webcam-card">
+          <div class="webcam-label">📷 Bréhal</div>
+          <div class="webcam-img">[ iframe webcam à configurer ]</div>
+        </div>
+      </div>
+
+      <div class="meteo-panel" id="base-jullouville">
+        <div class="meteo-section-title">Windguru</div>
+        <div class="iframe-wrapper">
+          <iframe src="https://www.windguru.cz/49281" height="350" scrolling="no"></iframe>
+        </div>
+        <div class="meteo-section-title">Webcam</div>
+        <div class="webcam-card">
+          <div class="webcam-label">📷 Jullouville</div>
+          <div class="webcam-img">[ iframe webcam à configurer ]</div>
+        </div>
+      </div>
+
+      <div class="meteo-panel" id="base-breville">
+        <div class="meteo-section-title">Windguru</div>
+        <div class="iframe-wrapper">
+          <iframe src="https://www.windguru.cz/49281" height="350" scrolling="no"></iframe>
+        </div>
+        <div class="meteo-section-title">Webcam</div>
+        <div class="webcam-card">
+          <div class="webcam-label">📷 Bréville</div>
+          <div class="webcam-img">[ iframe webcam à configurer ]</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MODULE MOBY DICK CUP ── -->
+    <div class="module" id="module-moby">
+      <div class="module-title">🏆 Moby Dick Cup</div>
+      <div class="moby-header">
+        <div class="moby-title">🐋 Moby Dick Cup 2026</div>
+        <div class="moby-subtitle">Classement provisoire</div>
+      </div>
+      <div id="classement-content">
+        <!-- Exemple -->
+        <div class="classement-row">
+          <div class="classement-rang rang-1">1</div>
+          <div class="classement-nom">— À venir —</div>
+          <div class="classement-points">— pts</div>
+        </div>
+      </div>
+      <p style="color:#aaa; font-size:13px; text-align:center; margin-top:12px;">
+        ⚠️ Résultats à brancher sur Firestore ou scraping FFVoile
+      </p>
+    </div>
+
+    <!-- ── MODULE MAINTENANCE ── -->
+    <div class="module" id="module-maintenance">
+      <div class="module-title">🔧 Maintenance</div>
+      <button class="btn-nouvelle-tache" onclick="ouvrirModal()">
+        + Signaler un problème
+      </button>
+      <div id="taches-content">
+        <!-- Exemple -->
+        <div class="tache-card">
+          <div class="tache-statut" onclick="toggleTache(this)"></div>
+          <div>
+            <div class="tache-titre">Voile déchirée — Catamaran n°3</div>
+            <div class="tache-meta">Granville · Signalé par Marine · il y a 2h</div>
+            <span class="tache-priorite priorite-haute">Urgent</span>
+          </div>
+        </div>
+        <div class="tache-card">
+          <div class="tache-statut done" onclick="toggleTache(this)"></div>
+          <div>
+            <div class="tache-titre">Manque de gilets taille S</div>
+            <div class="tache-meta">Bréhal · Signalé par Cédric · hier</div>
+            <span class="tache-priorite priorite-normale">Normal</span>
+          </div>
+        </div>
+      </div>
+      <p style="color:#aaa; font-size:13px; text-align:center; margin-top:12px;">
+        ⚠️ À synchroniser avec Firestore (Appli Nautisme)
+      </p>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main-app -->
+
+<!-- ══════════════════════════════════════
+     MODAL NOUVELLE TÂCHE
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">🔧 Signaler un problème</div>
+    <div class="modal-field">
+      <label class="modal-label">Description</label>
+      <textarea class="modal-textarea" id="tache-desc" placeholder="Décris le problème..."></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Base concernée</label>
+      <select class="modal-select" id="tache-base">
+        <option>Granville</option>
+        <option>Bréhal</option>
+        <option>Jullouville</option>
+        <option>Bréville</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Priorité</label>
+      <select class="modal-select" id="tache-priorite">
+        <option value="normale">Normale</option>
+        <option value="haute">Urgente</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="fermerModal()">Annuler</button>
+      <button class="modal-submit" onclick="soumettreSignalement()">Envoyer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── CONFIG ──
+  const CODE_SECRET = "8MILLES"; // À changer !
+  const SAISONNIERS = [
+    "Alexandre", "Amélie", "Baptiste", "Camille",
+    "Chloé", "Corentin", "Emma", "Hugo",
+    "Jade", "Léa", "Lucas", "Manon",
+    "Nathan", "Noé", "Océane", "Théo"
+  ]; // À adapter avec la vraie liste
+
+  let prenomActif = null;
+
+  // ── AUTH ──
+  function verifierCode() {
+    const val = document.getElementById('code-input').value.trim().toUpperCase();
+    if (val === CODE_SECRET) {
+      document.getElementById('page-auth').style.display = 'none';
+      afficherChoixPrenom();
+    } else {
+      document.getElementById('auth-error').style.display = 'block';
+      document.getElementById('code-input').value = '';
+    }
+  }
+
+  document.getElementById('code-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') verifierCode();
+  });
+
+  // ── CHOIX PRÉNOM ──
+  function afficherChoixPrenom() {
+    const grid = document.getElementById('prenom-grid');
+    grid.innerHTML = SAISONNIERS.map(p =>
+      `<button class="prenom-btn" onclick="choisirPrenom('${p}')">${p}</button>`
+    ).join('');
+    document.getElementById('page-prenom').style.display = 'flex';
+  }
+
+  // ── CACHE PLANNING (chargé depuis la Netlify Function) ──
+  let PLANNING_CACHE = null;
+
+  async function chargerPlanning() {
+    if (PLANNING_CACHE) return PLANNING_CACHE;
+    try {
+      const res = await fetch('/.netlify/functions/planning');
+      const json = await res.json();
+      PLANNING_CACHE = json.planning || {};
+    } catch(e) {
+      PLANNING_CACHE = {};
+    }
+    return PLANNING_CACHE;
+  }
+
+  async function renderPlanning(prenom) {
+    const container = document.getElementById('planning-content');
+    container.innerHTML = `<div style="text-align:center;padding:40px;color:#aaa;">⏳ Chargement du planning...</div>`;
+
+    const planning = await chargerPlanning();
+
+    // Construire les données par prénom : chercher dans chaque semaine
+    const dataParSemaine = {};
+    for (const [semaine, moniteurs] of Object.entries(planning)) {
+      if (moniteurs[prenom]) {
+        dataParSemaine[semaine] = moniteurs[prenom];
+      }
+    }
+
+    const data = Object.keys(dataParSemaine).length ? dataParSemaine : null;
+
+    if (!data) {
+      container.innerHTML = `
+        <div style="text-align:center; padding:40px 20px; color:#aaa;">
+          <div style="font-size:40px; margin-bottom:12px;">📅</div>
+          <div style="font-size:14px; font-weight:600; color:#bbb;">Planning non encore disponible</div>
+          <div style="font-size:12px; margin-top:6px;">Reviens plus tard ou contacte ton responsable de base.</div>
+        </div>`;
+      return;
+    }
+
+    let html = '';
+    for (const [semaine, creneaux] of Object.entries(data)) {
+      html += `<div class="planning-semaine">
+        <div class="planning-semaine-titre">📆 ${semaine}</div>`;
+
+      const jours = [...new Set(creneaux.map(c => c.jour))];
+      for (const jour of jours) {
+        const sessionsJour = creneaux.filter(c => c.jour === jour);
+        const isRepos = sessionsJour.every(s => s.session === 'Repos' || !s.poste);
+
+        html += `<div class="planning-creneau"><div class="planning-jour">${jour}</div><div class="planning-info">`;
+
+        if (isRepos) {
+          html += `<div class="planning-repos">🏖️ Repos</div>`;
+        } else {
+          for (const s of sessionsJour) {
+            if (!s.poste && !s.stage_h) continue;
+            const isMatin = s.session === 'Matin';
+            const bgColor = isMatin ? '#fffbea' : '#eef7ff';
+            const borderColor = isMatin ? 'var(--jaune)' : 'var(--bleu-ciel)';
+            const sessionLabel = isMatin ? '🌅 Matin' : '🌇 Après-midi';
+            html += `
+              <div style="background:${bgColor}; border-left: 3px solid ${borderColor}; border-radius:6px; padding:7px 10px; margin-bottom:6px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                  <span style="font-size:11px; font-weight:700; color:${borderColor};">${sessionLabel}</span>
+                  ${s.secteur ? `<span style="font-size:10px; font-weight:600; background:white; border:1px solid ${borderColor}; color:${borderColor}; border-radius:20px; padding:1px 8px;">${s.secteur}</span>` : ''}
+                </div>
+                <div class="planning-poste">🕐 ${s.poste}</div>
+                ${s.stage_h || s.stage_nom ? `<div class="planning-stage">⛵ ${s.stage_h}${s.stage_h && s.stage_nom ? ' — ' : ''}${s.stage_nom}</div>` : ''}
+              </div>`;
+          }
+        }
+
+        html += `</div></div>`;
+      }
+      html += `</div>`;
+    }
+
+    container.innerHTML = html;
+  }
+
+  async function choisirPrenom(prenom) {
+    prenomActif = prenom;
+    document.getElementById('page-prenom').style.display = 'none';
+    document.getElementById('display-prenom').textContent = prenom;
+    document.getElementById('main-app').classList.add('visible');
+    await renderPlanning(prenom);
+  }
+
+  function deconnexion() {
+    prenomActif = null;
+    document.getElementById('main-app').classList.remove('visible');
+    document.getElementById('page-auth').style.display = 'flex';
+    document.getElementById('code-input').value = '';
+    document.getElementById('auth-error').style.display = 'none';
+  }
+
+  // ── NAVIGATION MODULES ──
+  function showModule(id, tab) {
+    document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('module-' + id).classList.add('active');
+    tab.classList.add('active');
+  }
+
+  // ── BASES MÉTÉO ──
+  function showBase(id, btn) {
+    document.querySelectorAll('.meteo-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.meteo-tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('base-' + id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // ── MAINTENANCE ──
+  function toggleTache(el) {
+    el.classList.toggle('done');
+  }
+
+  function ouvrirModal() {
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  function fermerModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+
+  function soumettreSignalement() {
+    const desc = document.getElementById('tache-desc').value.trim();
+    if (!desc) return;
+    // TODO: envoyer vers Firestore
+    alert('Signalement envoyé ! Merci ' + prenomActif + ' 👍');
+    fermerModal();
+    document.getElementById('tache-desc').value = '';
+  }
+
+  // Fermer modal si clic en dehors
+  document.getElementById('modal-overlay').addEventListener('click', function(e) {
+    if (e.target === this) fermerModal();
+  });
+</script>
+</body>
+</html>
