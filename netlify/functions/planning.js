@@ -110,6 +110,8 @@ function parseSheetData(values, sheetName) {
     const nom = isNaN(parseInt(cellA)) ? cellA : (String(row[1] || '').trim() || cellA);
 
     const creneaux = [];
+    let dernierSecteur = ''; // Pour propager le secteur des cellules fusionnées
+
     for (const j of JOURS_COLS) {
       const colIdx = col => {
         if (col.length === 1) return col.charCodeAt(0) - 65;
@@ -124,12 +126,16 @@ function parseSheetData(values, sheetName) {
       const matinPoste  = String(row[iPoste]    || '').trim();
       const matinStageH = String(row[iStageH]   || '').trim();
       const matinNom    = String(row[iStageNom] || '').trim();
-      const matinSect   = String(row[iSecteur]  || '').trim();
+      const rawSect     = String(row[iSecteur]  || '').trim();
+
+      // Propager le secteur si la cellule est vide (cellule fusionnée)
+      if (rawSect) dernierSecteur = rawSect;
+      const matinSect = dernierSecteur;
 
       const amPoste  = String(row2[iPoste]    || '').trim();
       const amStageH = String(row2[iStageH]   || '').trim();
       const amNom    = String(row2[iStageNom] || '').trim();
-      const amSect   = String(row2[iSecteur]  || '').trim();
+      const amSect   = dernierSecteur; // même secteur pour l'après-midi
 
       if (matinPoste || matinStageH) {
         creneaux.push({ jour: j.jour, session: 'Matin', secteur: matinSect, poste: matinPoste, stage_h: matinStageH, stage_nom: matinNom });
@@ -138,7 +144,7 @@ function parseSheetData(values, sheetName) {
         creneaux.push({ jour: j.jour, session: 'A-M', secteur: amSect, poste: amPoste, stage_h: amStageH, stage_nom: amNom });
       }
       if (!matinPoste && !matinStageH && !amPoste && !amStageH) {
-        creneaux.push({ jour: j.jour, session: 'Repos', secteur: '', poste: '', stage_h: '', stage_nom: '' });
+        creneaux.push({ jour: j.jour, session: 'Repos', secteur: dernierSecteur, poste: '', stage_h: '', stage_nom: '' });
       }
     }
 
