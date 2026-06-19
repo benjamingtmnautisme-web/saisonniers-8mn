@@ -747,13 +747,11 @@
 
     const planning = await chargerPlanning();
 
-    // Construire les données par prénom : chercher dans chaque semaine (insensible à la casse)
+    // Construire les données par prénom
     const dataParSemaine = {};
     for (const [semaine, moniteurs] of Object.entries(planning)) {
       const key = Object.keys(moniteurs).find(k => k.toLowerCase() === prenom.toLowerCase());
-      if (key) {
-        dataParSemaine[semaine] = moniteurs[key];
-      }
+      if (key) dataParSemaine[semaine] = moniteurs[key];
     }
 
     const data = Object.keys(dataParSemaine).length ? dataParSemaine : null;
@@ -768,10 +766,32 @@
       return;
     }
 
-    let html = '';
-    for (const [semaine, creneaux] of Object.entries(data)) {
-      html += `<div class="planning-semaine">
-        <div class="planning-semaine-titre">📆 ${semaine}</div>`;
+    const semaines = Object.keys(dataParSemaine);
+
+    // Trouver la semaine courante (ou la première)
+    let semaineActive = semaines[0];
+
+    // ── Bouton signalement ──
+    let html = `
+      <button class="btn-nouvelle-tache" onclick="ouvrirModal()" style="margin-bottom:16px;">
+        🚨 Signaler un problème
+      </button>`;
+
+    // ── Onglets semaines ──
+    html += `<div class="meteo-tabs" id="semaine-tabs">`;
+    semaines.forEach((s, i) => {
+      // Nettoyer le titre : enlever " OK" à la fin
+      const titre = s.replace(/ OK$/i, '').replace(/^(Du|du)\s+/, '');
+      html += `<button class="meteo-tab-btn ${i === 0 ? 'active' : ''}" 
+        onclick="showSemaine('${s.replace(/'/g, "\\'")}')" 
+        id="tab-${i}">${titre}</button>`;
+    });
+    html += `</div>`;
+
+    // ── Panneau de chaque semaine ──
+    semaines.forEach((semaine, idx) => {
+      const creneaux = dataParSemaine[semaine];
+      html += `<div class="semaine-panel ${idx === 0 ? 'active' : ''}" id="panel-${idx}" style="display:${idx === 0 ? 'block' : 'none'}">`;
 
       const jours = [...new Set(creneaux.map(c => c.jour))];
       for (const jour of jours) {
@@ -790,13 +810,29 @@
             const borderColor = isMatin ? 'var(--jaune)' : 'var(--bleu-ciel)';
             const sessionLabel = isMatin ? '🌅 Matin' : '🌇 Après-midi';
 
-            // Déduire la base depuis le secteur
+            // Base depuis secteur
             const secteur = s.secteur || '';
+            const secteurNorm = secteur.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
             let base = '', baseBadgeColor = '';
-            if (secteur === 'Jullou') { base = '📍 Jullouville'; baseBadgeColor = 'var(--vert)'; }
-            else if (secteur === 'Bréhal') { base = '📍 Bréhal'; baseBadgeColor = 'var(--orange)'; }
-            else if (secteur === 'Dér/Cat' || secteur === 'Enfant') { base = '📍 Granville'; baseBadgeColor = 'var(--bleu-ciel)'; }
+            if (secteurNorm.includes('jullou')) { base = '📍 Jullouville'; baseBadgeColor = 'var(--vert)'; }
+            else if (secteurNorm.includes('brehal')) { base = '📍 Bréhal'; baseBadgeColor = 'var(--orange)'; }
+            else if (secteurNorm.includes('der') || secteurNorm.includes('cat') || secteurNorm.includes('enfant')) { base = '📍 Granville'; baseBadgeColor = 'var(--bleu-ciel)'; }
             else if (secteur) { base = '📍 ' + secteur; baseBadgeColor = '#aaa'; }
+
+            // Collègues du même secteur ce jour
+            const collegues = [];
+            if (planning[semaine]) {
+              for (const [nom, crs] of Object.entries(planning[semaine])) {
+                if (nom.toLowerCase() === prenom.toLowerCase()) continue;
+                const memeJour = crs.filter(c => c.jour === jour && c.session === s.session && c.secteur);
+                for (const c of memeJour) {
+                  const cNorm = (c.secteur||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+                  if (cNorm === secteurNorm && secteurNorm) {
+                    collegues.push(nom);
+                  }
+                }
+              }
+            }
 
             html += `
               <div style="background:${bgColor}; border-left: 3px solid ${borderColor}; border-radius:6px; padding:7px 10px; margin-bottom:6px;">
@@ -806,16 +842,29 @@
                 </div>
                 <div class="planning-poste">🕐 ${s.poste}</div>
                 ${s.stage_h || s.stage_nom ? `<div class="planning-stage">⛵ ${s.stage_h}${s.stage_h && s.stage_nom ? ' — ' : ''}${s.stage_nom}</div>` : ''}
+                ${collegues.length ? `<div style="font-size:11px; color:#888; margin-top:5px;">👥 ${collegues.join(', ')}</div>` : ''}
               </div>`;
           }
         }
-
         html += `</div></div>`;
       }
       html += `</div>`;
-    }
+    });
 
     container.innerHTML = html;
+
+    // Stocker les semaines pour la navigation
+    window._semainePanels = semaines;
+  }
+
+  function showSemaine(semaine) {
+    const semaines = window._semainePanels || [];
+    semaines.forEach((s, i) => {
+      const panel = document.getElementById('panel-' + i);
+      const tab = document.getElementById('tab-' + i);
+      if (panel) panel.style.display = s === semaine ? 'block' : 'none';
+      if (tab) tab.classList.toggle('active', s === semaine);
+    });
   }
 
   async function choisirPrenom(prenom) {
