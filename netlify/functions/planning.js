@@ -107,7 +107,11 @@ function parseSheetData(values, sheetName) {
 
     const row2 = values[i + 1] || [];
     // Nom = cellA si c'est un prénom, sinon cellB
-    const nom = isNaN(parseInt(cellA)) ? cellA : (String(row[1] || '').trim() || cellA);
+    // Détecter un stagiaire noté après "+"
+    const rawNom = isNaN(parseInt(cellA)) ? cellA : (String(row[1] || '').trim() || cellA);
+    const plusIdx = rawNom.indexOf('+');
+    const nom = plusIdx > -1 ? rawNom.slice(0, plusIdx).trim() : rawNom.trim();
+    const stagiaire = plusIdx > -1 ? rawNom.slice(plusIdx + 1).trim() : '';
 
     const creneaux = [];
     let dernierSecteur = ''; // Pour propager le secteur des cellules fusionnées
@@ -138,13 +142,13 @@ function parseSheetData(values, sheetName) {
       const amSect   = dernierSecteur; // même secteur pour l'après-midi
 
       if (matinPoste || matinStageH) {
-        creneaux.push({ jour: j.jour, session: 'Matin', secteur: matinSect, poste: matinPoste, stage_h: matinStageH, stage_nom: matinNom });
+        creneaux.push({ jour: j.jour, session: 'Matin', secteur: matinSect, poste: matinPoste, stage_h: matinStageH, stage_nom: matinNom, stagiaire });
       }
       if (amPoste || amStageH) {
-        creneaux.push({ jour: j.jour, session: 'A-M', secteur: amSect, poste: amPoste, stage_h: amStageH, stage_nom: amNom });
+        creneaux.push({ jour: j.jour, session: 'A-M', secteur: amSect, poste: amPoste, stage_h: amStageH, stage_nom: amNom, stagiaire });
       }
       if (!matinPoste && !matinStageH && !amPoste && !amStageH) {
-        creneaux.push({ jour: j.jour, session: 'Repos', secteur: dernierSecteur, poste: '', stage_h: '', stage_nom: '' });
+        creneaux.push({ jour: j.jour, session: 'Repos', secteur: dernierSecteur, poste: '', stage_h: '', stage_nom: '', stagiaire });
       }
     }
 
