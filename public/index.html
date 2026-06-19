@@ -789,11 +789,20 @@
             const bgColor = isMatin ? '#fffbea' : '#eef7ff';
             const borderColor = isMatin ? 'var(--jaune)' : 'var(--bleu-ciel)';
             const sessionLabel = isMatin ? '🌅 Matin' : '🌇 Après-midi';
+
+            // Déduire la base depuis le secteur
+            const secteur = s.secteur || '';
+            let base = '', baseBadgeColor = '';
+            if (secteur === 'Jullou') { base = '📍 Jullouville'; baseBadgeColor = 'var(--vert)'; }
+            else if (secteur === 'Bréhal') { base = '📍 Bréhal'; baseBadgeColor = 'var(--orange)'; }
+            else if (secteur === 'Dér/Cat' || secteur === 'Enfant') { base = '📍 Granville'; baseBadgeColor = 'var(--bleu-ciel)'; }
+            else if (secteur) { base = '📍 ' + secteur; baseBadgeColor = '#aaa'; }
+
             html += `
               <div style="background:${bgColor}; border-left: 3px solid ${borderColor}; border-radius:6px; padding:7px 10px; margin-bottom:6px;">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
                   <span style="font-size:11px; font-weight:700; color:${borderColor};">${sessionLabel}</span>
-                  ${s.secteur ? `<span style="font-size:10px; font-weight:600; background:white; border:1px solid ${borderColor}; color:${borderColor}; border-radius:20px; padding:1px 8px;">${s.secteur}</span>` : ''}
+                  ${base ? `<span style="font-size:10px; font-weight:600; background:white; border:1px solid ${baseBadgeColor}; color:${baseBadgeColor}; border-radius:20px; padding:1px 8px;">${base}</span>` : ''}
                 </div>
                 <div class="planning-poste">🕐 ${s.poste}</div>
                 ${s.stage_h || s.stage_nom ? `<div class="planning-stage">⛵ ${s.stage_h}${s.stage_h && s.stage_nom ? ' — ' : ''}${s.stage_nom}</div>` : ''}
