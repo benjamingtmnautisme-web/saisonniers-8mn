@@ -847,7 +847,7 @@
                 </div>
                 <div class="planning-poste">🕐 ${s.poste}</div>
                 ${s.stage_h || s.stage_nom ? `<div class="planning-stage">⛵ ${s.stage_h}${s.stage_h && s.stage_nom ? ' — ' : ''}${s.stage_nom}</div>` : ''}
-                ${collegues.length ? `<div style="font-size:11px; color:#888; margin-top:5px;">👥 ${collegues.join(', ')}</div>` : ''}
+                ${s.stagiaire ? `<div style="font-size:11px; color:#888; margin-top:5px;">🎓 En formation : ${s.stagiaire}</div>` : ''}
               </div>`;
           }
         }
