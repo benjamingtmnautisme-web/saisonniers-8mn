@@ -747,11 +747,12 @@
 
     const planning = await chargerPlanning();
 
-    // Construire les données par prénom : chercher dans chaque semaine
+    // Construire les données par prénom : chercher dans chaque semaine (insensible à la casse)
     const dataParSemaine = {};
     for (const [semaine, moniteurs] of Object.entries(planning)) {
-      if (moniteurs[prenom]) {
-        dataParSemaine[semaine] = moniteurs[prenom];
+      const key = Object.keys(moniteurs).find(k => k.toLowerCase() === prenom.toLowerCase());
+      if (key) {
+        dataParSemaine[semaine] = moniteurs[key];
       }
     }
 
