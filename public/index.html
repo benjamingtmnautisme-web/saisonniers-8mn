@@ -821,15 +821,20 @@
 
             // Collègues du même secteur ce jour
             const collegues = [];
-            if (planning[semaine]) {
+            if (planning[semaine] && secteurNorm) {
               for (const [nom, crs] of Object.entries(planning[semaine])) {
                 if (nom.toLowerCase() === prenom.toLowerCase()) continue;
-                const memeJour = crs.filter(c => c.jour === jour && c.session === s.session && c.secteur);
-                for (const c of memeJour) {
+                for (const c of crs) {
+                  if (c.jour !== jour || c.session !== s.session) continue;
                   const cNorm = (c.secteur||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-                  if (cNorm === secteurNorm && secteurNorm) {
-                    collegues.push(nom);
-                  }
+                  // Même catégorie de base
+                  const memeBase = (
+                    (secteurNorm.includes('jullou') && cNorm.includes('jullou')) ||
+                    (secteurNorm.includes('brehal') && cNorm.includes('brehal')) ||
+                    ((secteurNorm.includes('der') || secteurNorm.includes('cat') || secteurNorm.includes('enfant')) &&
+                     (cNorm.includes('der') || cNorm.includes('cat') || cNorm.includes('enfant')))
+                  );
+                  if (memeBase && !collegues.includes(nom)) collegues.push(nom);
                 }
               }
             }
