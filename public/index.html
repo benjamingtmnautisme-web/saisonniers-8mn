@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -692,6 +693,10 @@
       <label class="modal-label">Ton prénom (signature)</label>
       <input class="modal-input" id="actu-auteur-input" placeholder="Ex : Benj">
     </div>
+    <div class="modal-field">
+      <label class="modal-label">Code responsable</label>
+      <input class="modal-input" type="password" id="actu-code-input" placeholder="Code">
+    </div>
     <div class="modal-actions">
       <button class="modal-cancel" onclick="fermerModalActu()">Annuler</button>
       <button class="modal-submit" onclick="soumettreActu()">Publier</button>
@@ -762,6 +767,9 @@
     const titre = document.getElementById('actu-titre-input').value.trim();
     const texte = document.getElementById('actu-texte-input').value.trim();
     const auteur = document.getElementById('actu-auteur-input').value.trim();
+    const code = document.getElementById('actu-code-input').value.trim();
+
+    if (code !== CODE_ACTU) { alert('Code incorrect'); return; }
     if (!titre || !texte) { alert('Merci de remplir au moins le titre et le message'); return; }
 
     try {
@@ -774,6 +782,7 @@
       document.getElementById('actu-titre-input').value = '';
       document.getElementById('actu-texte-input').value = '';
       document.getElementById('actu-auteur-input').value = '';
+      document.getElementById('actu-code-input').value = '';
     } catch (e) {
       alert('Erreur lors de la publication, réessaie.');
     }
@@ -786,6 +795,7 @@
 <script>
   // ── CONFIG ──
   const CODE_SECRET = "8MN2026";
+  const CODE_ACTU = "resp8mn";
 
   // ── AUTH ──
   function verifierCode() {
@@ -887,7 +897,7 @@
     const fallbackUrl = pdf.webUrl;
 
     if (proxyUrl) {
-      wrapper.innerHTML = `<iframe id="pdf-iframe" src="${proxyUrl}" style="width:100%; height:60vh; border:none;"></iframe>`;
+      wrapper.innerHTML = `<iframe id="pdf-iframe" src="${proxyUrl}#view=FitH" style="width:100%; height:70vh; border:none;"></iframe>`;
       document.getElementById('pdf-download-link').href = fallbackUrl || proxyUrl;
     } else if (fallbackUrl) {
       wrapper.innerHTML = `<div style="padding:40px; text-align:center; color:#aaa;">Aperçu indisponible, utilise le bouton télécharger 👇</div>`;
