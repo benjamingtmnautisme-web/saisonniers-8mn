@@ -750,25 +750,22 @@
     pdfIndexActif = idxDefaut;
 
     let html = `
-      <button class="btn-nouvelle-tache" onclick="ouvrirModal()" style="margin-bottom:16px;">
-        🚨 Signaler un problème
-      </button>
+      <div style="text-align:center; margin-bottom:14px;">
+        <div id="pdf-titre" style="font-size:15px; font-weight:700; color:var(--bleu-marine);"></div>
+      </div>
 
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-        <button onclick="pdfPrecedent()" style="background:white; border:2px solid #e0e0e0; border-radius:50%; width:36px; height:36px; font-size:16px; cursor:pointer; color:var(--bleu-marine); flex-shrink:0;">‹</button>
-        <div style="text-align:center; flex:1; padding:0 10px;">
-          <div id="pdf-titre" style="font-size:14px; font-weight:700; color:var(--bleu-marine);"></div>
-          <div id="pdf-compteur" style="font-size:11px; color:#aaa; margin-top:2px;"></div>
+      <div id="pdf-viewer-wrapper" style="background:white; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08); min-height:60vh; margin-bottom:14px;">
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button onclick="pdfPleinEcran()" style="padding:14px; background:var(--bleu-marine); color:white; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;">⛶ Plein écran</button>
+        <a id="pdf-download-link" href="#" target="_blank" style="display:block; text-align:center; padding:14px; background:var(--vert); color:white; border-radius:10px; font-size:14px; font-weight:600; text-decoration:none;">⬇️ Télécharger</a>
+        <div style="display:flex; gap:10px;">
+          <button onclick="pdfPrecedent()" style="flex:1; padding:14px; background:var(--bleu-ciel); color:white; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;">← Semaine préc.</button>
+          <button onclick="pdfSuivant()" style="flex:1; padding:14px; background:var(--bleu-ciel); color:white; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;">Semaine suiv. →</button>
         </div>
-        <button onclick="pdfSuivant()" style="background:white; border:2px solid #e0e0e0; border-radius:50%; width:36px; height:36px; font-size:16px; cursor:pointer; color:var(--bleu-marine); flex-shrink:0;">›</button>
+        <button onclick="ouvrirModal()" style="padding:14px; background:#e53935; color:white; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;">🚨 Signaler un souci sur le planning</button>
       </div>
-
-      <div id="pdf-viewer-wrapper" style="background:white; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08); min-height:60vh;">
-      </div>
-
-      <a id="pdf-download-link" href="#" target="_blank" style="display:block; text-align:center; margin-top:12px; padding:12px; background:white; border-radius:10px; color:var(--bleu-ciel); font-size:13px; font-weight:600; text-decoration:none; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-        ⬇️ Ouvrir / télécharger le PDF
-      </a>
     `;
 
     container.innerHTML = html;
@@ -782,16 +779,26 @@
     const pdf = pdfs[pdfIndexActif];
 
     document.getElementById('pdf-titre').textContent = '📆 ' + pdf.nom;
-    document.getElementById('pdf-compteur').textContent = `Semaine ${pdfIndexActif + 1} / ${pdfs.length}`;
 
     const wrapper = document.getElementById('pdf-viewer-wrapper');
-    const url = pdf.url || pdf.webUrl;
-    if (url) {
-      wrapper.innerHTML = `<iframe src="${url}" style="width:100%; height:70vh; border:none;"></iframe>`;
-      document.getElementById('pdf-download-link').href = pdf.webUrl || pdf.url;
+    const directUrl = pdf.url;
+    const fallbackUrl = pdf.webUrl;
+
+    if (directUrl) {
+      wrapper.innerHTML = `<iframe id="pdf-iframe" src="${directUrl}#toolbar=0" style="width:100%; height:60vh; border:none;"></iframe>`;
+      document.getElementById('pdf-download-link').href = fallbackUrl || directUrl;
+    } else if (fallbackUrl) {
+      wrapper.innerHTML = `<div style="padding:40px; text-align:center; color:#aaa;">Aperçu indisponible, utilise le bouton télécharger 👇</div>`;
+      document.getElementById('pdf-download-link').href = fallbackUrl;
     } else {
       wrapper.innerHTML = `<div style="padding:40px; text-align:center; color:#aaa;">PDF indisponible</div>`;
     }
+  }
+
+  function pdfPleinEcran() {
+    const iframe = document.getElementById('pdf-iframe');
+    if (iframe && iframe.requestFullscreen) iframe.requestFullscreen();
+    else if (iframe && iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
   }
 
   function pdfPrecedent() {
