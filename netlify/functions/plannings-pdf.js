@@ -8,7 +8,7 @@ const CLIENT_SECRET = process.env.AZURE_CLIENT_SECRET;
 const SHAREPOINT_HOST = 'splgtm.sharepoint.com';
 const SITE_PATH       = '/sites/ServiceNautisme77';
 // Dossier contenant les PDF de planning (un fichier par semaine, toutes bases confondues)
-const FOLDER_PATH     = 'Général/Plannings activités et équipes/PDF plannings Granville';
+const FOLDER_PATH     = 'Général/Plannings activités et équipes/PDF plannings Granville/Plannings CQP 2026';
 
 function httpsGet(url, headers) {
   return new Promise((resolve, reject) => {
