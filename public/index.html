@@ -781,13 +781,12 @@
     document.getElementById('pdf-titre').textContent = '📆 ' + pdf.nom;
 
     const wrapper = document.getElementById('pdf-viewer-wrapper');
-    const directUrl = pdf.url;
+    const proxyUrl = pdf.id ? `/.netlify/functions/pdf-proxy?id=${encodeURIComponent(pdf.id)}` : null;
     const fallbackUrl = pdf.webUrl;
 
-    if (directUrl) {
-      const viewerUrl = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(directUrl);
-      wrapper.innerHTML = `<iframe id="pdf-iframe" src="${viewerUrl}" style="width:100%; height:60vh; border:none;"></iframe>`;
-      document.getElementById('pdf-download-link').href = fallbackUrl || directUrl;
+    if (proxyUrl) {
+      wrapper.innerHTML = `<iframe id="pdf-iframe" src="${proxyUrl}" style="width:100%; height:60vh; border:none;"></iframe>`;
+      document.getElementById('pdf-download-link').href = fallbackUrl || proxyUrl;
     } else if (fallbackUrl) {
       wrapper.innerHTML = `<div style="padding:40px; text-align:center; color:#aaa;">Aperçu indisponible, utilise le bouton télécharger 👇</div>`;
       document.getElementById('pdf-download-link').href = fallbackUrl;
