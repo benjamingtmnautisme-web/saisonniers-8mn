@@ -614,6 +614,20 @@
       <button class="btn-nouvelle-tache" onclick="ouvrirModal()">
         + Signaler un problème
       </button>
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <select class="modal-select" id="filtre-base" onchange="renderTachesFiltrees()" style="flex:1;">
+          <option value="">Toutes les bases</option>
+          <option value="Granville">Granville</option>
+          <option value="Bréhal">Bréhal</option>
+          <option value="Jullouville">Jullouville</option>
+          <option value="Bréville">Bréville</option>
+        </select>
+        <select class="modal-select" id="filtre-urgence" onchange="renderTachesFiltrees()" style="flex:1;">
+          <option value="">Toute urgence</option>
+          <option value="Urgent">Urgent</option>
+          <option value="Normal">Normal</option>
+        </select>
+      </div>
       <div id="taches-content">
         <div style="text-align:center;padding:40px;color:#aaa;">⏳ Chargement...</div>
       </div>
@@ -754,37 +768,9 @@
   // Écoute en temps réel des tâches de maintenance (partagées avec l'Appli Nautisme)
   const maintenanceRef = ref(rtdb, 'maintenance');
   onValue(maintenanceRef, (snapshot) => {
-    const container = document.getElementById('taches-content');
-    if (!container) return;
     const data = snapshot.val();
-    if (!data) {
-      container.innerHTML = `<div style="text-align:center;padding:40px;color:#aaa;">Aucune tâche pour le moment</div>`;
-      return;
-    }
-
-    // Convertir en tableau et trier : non faites d'abord, puis par date desc
-    const taches = Object.entries(data).map(([id, t]) => ({ id, ...t }));
-    taches.sort((a, b) => {
-      if (!!a.done !== !!b.done) return a.done ? 1 : -1;
-      return (b.date || '').localeCompare(a.date || '');
-    });
-
-    let html = '';
-    for (const t of taches) {
-      const titre = [t.type, t.num].filter(Boolean).join(' n°');
-      const urgenceClass = (t.urgency === 'Urgent') ? 'priorite-haute' : 'priorite-normale';
-      const urgenceLabel = (t.urgency === 'Urgent') ? 'Urgent' : 'Normal';
-      html += `
-        <div class="tache-card">
-          <div class="tache-statut ${t.done ? 'done' : ''}" onclick="toggleTacheRTDB('${t.id}', ${!!t.done})"></div>
-          <div>
-            <div class="tache-titre">${titre || 'Signalement'}${t.desc ? ' — ' + t.desc : ''}</div>
-            <div class="tache-meta">${t.base || ''} · Signalé par ${t.author || '?'} · ${t.date || ''}</div>
-            <span class="tache-priorite ${urgenceClass}">${urgenceLabel}</span>
-          </div>
-        </div>`;
-    }
-    container.innerHTML = html;
+    window._tachesData = data ? Object.entries(data).map(([id, t]) => ({ id, ...t })) : [];
+    if (typeof window.renderTachesFiltrees === 'function') window.renderTachesFiltrees();
   }, (err) => {
     const container = document.getElementById('taches-content');
     if (container) container.innerHTML = `<div style="text-align:center;padding:40px;color:#aaa;">Impossible de charger les tâches</div>`;
@@ -793,6 +779,45 @@
 
 <script>
   // ── MAINTENANCE (Realtime Database) ──
+  function renderTachesFiltrees() {
+    const container = document.getElementById('taches-content');
+    if (!container) return;
+
+    const taches = window._tachesData || [];
+    const filtreBase = document.getElementById('filtre-base') ? document.getElementById('filtre-base').value : '';
+    const filtreUrgence = document.getElementById('filtre-urgence') ? document.getElementById('filtre-urgence').value : '';
+
+    // On masque les tâches faites, et on applique les filtres
+    let visibles = taches.filter(t => !t.done);
+    if (filtreBase) visibles = visibles.filter(t => t.base === filtreBase);
+    if (filtreUrgence) visibles = visibles.filter(t => (t.urgency || 'Normal') === filtreUrgence);
+
+    visibles.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+    if (!visibles.length) {
+      container.innerHTML = `<div style="text-align:center;padding:40px;color:#aaa;">Aucune tâche en cours 🎉</div>`;
+      return;
+    }
+
+    let html = '';
+    for (const t of visibles) {
+      const titre = [t.type, t.num].filter(Boolean).join(' n°');
+      const urgenceClass = (t.urgency === 'Urgent') ? 'priorite-haute' : 'priorite-normale';
+      const urgenceLabel = (t.urgency === 'Urgent') ? 'Urgent' : 'Normal';
+      html += `
+        <div class="tache-card">
+          <div class="tache-statut" onclick="toggleTacheRTDB('${t.id}', false)"></div>
+          <div>
+            <div class="tache-titre">${titre || 'Signalement'}${t.desc ? ' — ' + t.desc : ''}</div>
+            <div class="tache-meta">${t.base || ''} · Signalé par ${t.author || '?'} · ${t.date || ''}</div>
+            <span class="tache-priorite ${urgenceClass}">${urgenceLabel}</span>
+          </div>
+        </div>`;
+    }
+    container.innerHTML = html;
+  }
+  window.renderTachesFiltrees = renderTachesFiltrees;
+
   async function toggleTacheRTDB(id, etatActuel) {
     const { rtdb, ref, update } = window._rtdb;
     const auteur = prompt('Ton prénom pour valider :');
@@ -1030,7 +1055,6 @@
         doneDate: '',
         deadline: ''
       });
-      alert('Signalement envoyé, merci !');
       fermerModal();
       document.getElementById('tache-desc').value = '';
       document.getElementById('tache-type').value = '';
