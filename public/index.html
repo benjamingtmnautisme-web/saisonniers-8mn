@@ -505,19 +505,12 @@
     <!-- ── MODULE ACTU ── -->
     <div class="module" id="module-actu">
       <div class="module-title">📰 Actualités</div>
-      <div class="actu-card">
-        <div class="actu-date">18 juin 2026</div>
-        <div class="actu-titre">🏄 Bienvenue à l'équipe saisonniers 2026 !</div>
-        <div class="actu-texte">Toute l'équipe permanente est ravie de vous accueillir pour cette saison. N'hésitez pas à solliciter vos responsables de base.</div>
+      <button class="btn-nouvelle-tache" onclick="ouvrirModalActu()" style="margin-bottom:16px;">
+        ✏️ Publier une actu
+      </button>
+      <div id="actu-content">
+        <div style="text-align:center;padding:40px;color:#aaa;">⏳ Chargement...</div>
       </div>
-      <div class="actu-card">
-        <div class="actu-date">17 juin 2026</div>
-        <div class="actu-titre">📋 Réunion de pré-saison</div>
-        <div class="actu-texte">La réunion de rentrée aura lieu le 5 juillet à 9h à la base de Granville. Présence obligatoire pour tous les saisonniers.</div>
-      </div>
-      <p style="color:#aaa; font-size:13px; text-align:center; margin-top:8px;">
-        ⚠️ Fil d'actu à brancher sur Firestore
-      </p>
     </div>
 
     <!-- ── MODULE MÉTÉO / WEBCAM ── -->
@@ -681,9 +674,118 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════
+     MODAL NOUVELLE ACTU
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-actu-overlay">
+  <div class="modal">
+    <div class="modal-title">📰 Publier une actu</div>
+    <div class="modal-field">
+      <label class="modal-label">Titre</label>
+      <input class="modal-input" id="actu-titre-input" placeholder="Ex : Changement de planning">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Message</label>
+      <textarea class="modal-textarea" id="actu-texte-input" placeholder="Détails..."></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Ton prénom (signature)</label>
+      <input class="modal-input" id="actu-auteur-input" placeholder="Ex : Benj">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="fermerModalActu()">Annuler</button>
+      <button class="modal-submit" onclick="soumettreActu()">Publier</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBf7bteFT-QKV6qN8OII9M2pFpibB3NiYY",
+    authDomain: "milles-e4f69.firebaseapp.com",
+    databaseURL: "https://milles-e4f69-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "milles-e4f69",
+    storageBucket: "milles-e4f69.firebasestorage.app",
+    messagingSenderId: "86699270978",
+    appId: "1:86699270978:web:b0ed1805d73a721e725edb",
+    measurementId: "G-3JWMF1HJKV"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const db = getFirestore(fbApp);
+
+  // Exposer pour le reste du code (non-module)
+  window._firestore = { db, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp };
+
+  // Écoute en temps réel des actus (saisonniers_actus pour ne pas interférer avec l'autre appli)
+  const actusQuery = query(collection(db, 'saisonniers_actus'), orderBy('date', 'desc'), limit(30));
+  onSnapshot(actusQuery, (snapshot) => {
+    const container = document.getElementById('actu-content');
+    if (!container) return;
+    if (snapshot.empty) {
+      container.innerHTML = `<div style="text-align:center;padding:40px;color:#aaa;">Aucune actu pour le moment</div>`;
+      return;
+    }
+    let html = '';
+    snapshot.forEach(doc => {
+      const a = doc.data();
+      const date = a.date && a.date.toDate ? a.date.toDate() : new Date();
+      const dateStr = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+      html += `
+        <div class="actu-card">
+          <div class="actu-date">${dateStr}${a.auteur ? ' · ' + a.auteur : ''}</div>
+          <div class="actu-titre">${a.titre || ''}</div>
+          <div class="actu-texte">${(a.texte || '').replace(/\n/g, '<br>')}</div>
+        </div>`;
+    });
+    container.innerHTML = html;
+  }, (err) => {
+    const container = document.getElementById('actu-content');
+    if (container) container.innerHTML = `<div style="text-align:center;padding:40px;color:#aaa;">Impossible de charger les actus</div>`;
+  });
+</script>
+
+<script>
+  // ── MODAL ACTU ──
+  function ouvrirModalActu() {
+    document.getElementById('modal-actu-overlay').classList.add('open');
+  }
+  function fermerModalActu() {
+    document.getElementById('modal-actu-overlay').classList.remove('open');
+  }
+  async function soumettreActu() {
+    const titre = document.getElementById('actu-titre-input').value.trim();
+    const texte = document.getElementById('actu-texte-input').value.trim();
+    const auteur = document.getElementById('actu-auteur-input').value.trim();
+    if (!titre || !texte) { alert('Merci de remplir au moins le titre et le message'); return; }
+
+    try {
+      const { db, collection, addDoc, serverTimestamp } = window._firestore;
+      await addDoc(collection(db, 'saisonniers_actus'), {
+        titre, texte, auteur,
+        date: serverTimestamp()
+      });
+      fermerModalActu();
+      document.getElementById('actu-titre-input').value = '';
+      document.getElementById('actu-texte-input').value = '';
+      document.getElementById('actu-auteur-input').value = '';
+    } catch (e) {
+      alert('Erreur lors de la publication, réessaie.');
+    }
+  }
+  document.getElementById('modal-actu-overlay').addEventListener('click', function(e) {
+    if (e.target === this) fermerModalActu();
+  });
+</script>
+
 <script>
   // ── CONFIG ──
-  const CODE_SECRET = "8MILLES"; // À changer !
+  const CODE_SECRET = "8MN2026";
 
   // ── AUTH ──
   function verifierCode() {
@@ -796,9 +898,11 @@
   }
 
   function pdfPleinEcran() {
-    const iframe = document.getElementById('pdf-iframe');
-    if (iframe && iframe.requestFullscreen) iframe.requestFullscreen();
-    else if (iframe && iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+    const pdfs = window._pdfsListe || [];
+    if (!pdfs.length) return;
+    const pdf = pdfs[pdfIndexActif];
+    const proxyUrl = pdf.id ? `/.netlify/functions/pdf-proxy?id=${encodeURIComponent(pdf.id)}` : (pdf.webUrl || '#');
+    window.open(proxyUrl, '_blank');
   }
 
   function pdfPrecedent() {
