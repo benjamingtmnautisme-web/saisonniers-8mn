@@ -454,19 +454,6 @@
 </div>
 
 <!-- ══════════════════════════════════════
-     PAGE PRÉNOM
-══════════════════════════════════════ -->
-<div id="page-prenom">
-  <div class="prenom-card">
-    <div class="prenom-title">👋 Qui es-tu ?</div>
-    <div class="prenom-subtitle">Choisis ton prénom pour voir ton planning</div>
-    <div class="prenom-grid" id="prenom-grid">
-      <!-- Généré dynamiquement -->
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════
      APP PRINCIPALE
 ══════════════════════════════════════ -->
 <div class="app" id="main-app">
@@ -481,7 +468,6 @@
       </div>
     </div>
     <div class="header-user">
-      <span>Bonjour, <span class="header-user-name" id="display-prenom"></span></span>
       <button class="btn-logout" onclick="deconnexion()">Quitter</button>
     </div>
   </div>
@@ -510,7 +496,7 @@
 
     <!-- ── MODULE PLANNING ── -->
     <div class="module active" id="module-planning">
-      <div class="module-title">📅 Mon planning</div>
+      <div class="module-title">📅 Plannings</div>
       <div id="planning-content">
         <!-- Généré dynamiquement par renderPlanning() -->
       </div>
@@ -698,31 +684,14 @@
 <script>
   // ── CONFIG ──
   const CODE_SECRET = "8MILLES"; // À changer !
-  const SAISONNIERS = [
-    "Andrea Rame", "Augustine Bourdon", "Benjamin Poulet", "Brune Lescœur",
-    "Brune Viot", "Camille Frappier", "Camille Galles", "Candice Masson",
-    "Célestine Moxhet", "Charlotte Belgrand", "Charlotte de la Fouchardiere",
-    "Clarisse Le Vavasseur", "Côme Giraudeau", "Come Thomas", "Dauphine Clouet d'Orval",
-    "Elouan Blin", "Emma Gautier-Magneron", "Faustine Doc", "Gaspard Pichet",
-    "Gaston Robillard-Thoraval", "Gautier Endelin", "Henri Winsback",
-    "Josephine Mazier Thoraval", "Joséphine Dupuis", "Jules Brémand",
-    "Jules Vandecandelaere", "Klara Herisson", "Lepineau Hortense",
-    "Lou Jeanne", "Louis Vallee", "Lucie Sauterey", "Léo Gires",
-    "Léo-Paul Lebrec", "Madog Calage", "Maëlis Arondel", "Manon Ricour",
-    "Marius Vallée", "Mathieu Girard", "Mathis Lesaulnier", "Oscar Lesoimier",
-    "Pierre-Louis Vian", "Rémi Dufaÿ", "Rohe Basile", "Rose Drots",
-    "Solal", "Solène Viry de Saint Denis", "Solveig Desbois",
-    "Swann Marie", "Thaddée de la Bretèche", "Vaea Perrin"
-  ].sort();
-
-  let prenomActif = null;
 
   // ── AUTH ──
   function verifierCode() {
     const val = document.getElementById('code-input').value.trim().toUpperCase();
     if (val === CODE_SECRET) {
       document.getElementById('page-auth').style.display = 'none';
-      afficherChoixPrenom();
+      document.getElementById('main-app').classList.add('visible');
+      renderPlanningPDF();
     } else {
       document.getElementById('auth-error').style.display = 'block';
       document.getElementById('code-input').value = '';
@@ -733,176 +702,112 @@
     if (e.key === 'Enter') verifierCode();
   });
 
-  // ── CHOIX PRÉNOM ──
-  function afficherChoixPrenom() {
-    const grid = document.getElementById('prenom-grid');
-    grid.innerHTML = SAISONNIERS.map(p =>
-      `<button class="prenom-btn" onclick="choisirPrenom('${p}')">${p}</button>`
-    ).join('');
-    document.getElementById('page-prenom').style.display = 'flex';
-  }
-
-  // ── CACHE PLANNING (chargé depuis la Netlify Function) ──
-  let PLANNING_CACHE = null;
-
-  async function chargerPlanning() {
-    if (PLANNING_CACHE) return PLANNING_CACHE;
-    try {
-      const res = await fetch('/.netlify/functions/planning');
-      const json = await res.json();
-      PLANNING_CACHE = json.planning || {};
-    } catch(e) {
-      PLANNING_CACHE = {};
-    }
-    return PLANNING_CACHE;
-  }
-
-  async function renderPlanning(prenom) {
-    const container = document.getElementById('planning-content');
-    container.innerHTML = `<div style="text-align:center;padding:40px;color:#aaa;">⏳ Chargement du planning...</div>`;
-
-    const planning = await chargerPlanning();
-
-    // Construire les données par prénom
-    const dataParSemaine = {};
-    for (const [semaine, moniteurs] of Object.entries(planning)) {
-      const key = Object.keys(moniteurs).find(k => k.toLowerCase() === prenom.toLowerCase());
-      if (key) dataParSemaine[semaine] = moniteurs[key];
-    }
-
-    const data = Object.keys(dataParSemaine).length ? dataParSemaine : null;
-
-    if (!data) {
-      container.innerHTML = `
-        <div style="text-align:center; padding:40px 20px; color:#aaa;">
-          <div style="font-size:40px; margin-bottom:12px;">📅</div>
-          <div style="font-size:14px; font-weight:600; color:#bbb;">Planning non encore disponible</div>
-          <div style="font-size:12px; margin-top:6px;">Reviens plus tard ou contacte ton responsable de base.</div>
-        </div>`;
-      return;
-    }
-
-    const semaines = Object.keys(dataParSemaine);
-
-    // Trouver la semaine courante (ou la première)
-    let semaineActive = semaines[0];
-
-    // ── Bouton signalement ──
-    let html = `
-      <button class="btn-nouvelle-tache" onclick="ouvrirModal()" style="margin-bottom:16px;">
-        🚨 Signaler un problème
-      </button>`;
-
-    // ── Onglets semaines ──
-    html += `<div class="meteo-tabs" id="semaine-tabs">`;
-    semaines.forEach((s, i) => {
-      // Nettoyer le titre : enlever " OK" à la fin
-      const titre = s.replace(/ OK$/i, '').replace(/^(Du|du)\s+/, '');
-      html += `<button class="meteo-tab-btn ${i === 0 ? 'active' : ''}" 
-        onclick="showSemaine('${s.replace(/'/g, "\\'")}')" 
-        id="tab-${i}">${titre}</button>`;
-    });
-    html += `</div>`;
-
-    // ── Panneau de chaque semaine ──
-    semaines.forEach((semaine, idx) => {
-      const creneaux = dataParSemaine[semaine];
-      html += `<div class="semaine-panel ${idx === 0 ? 'active' : ''}" id="panel-${idx}" style="display:${idx === 0 ? 'block' : 'none'}">`;
-
-      const jours = [...new Set(creneaux.map(c => c.jour))];
-      for (const jour of jours) {
-        const sessionsJour = creneaux.filter(c => c.jour === jour);
-        const isRepos = sessionsJour.every(s => s.session === 'Repos' || !s.poste);
-
-        html += `<div class="planning-creneau"><div class="planning-jour">${jour}</div><div class="planning-info">`;
-
-        if (isRepos) {
-          html += `<div class="planning-repos">🏖️ Repos</div>`;
-        } else {
-          for (const s of sessionsJour) {
-            if (!s.poste && !s.stage_h) continue;
-            const isMatin = s.session === 'Matin';
-            const bgColor = isMatin ? '#fffbea' : '#eef7ff';
-            const borderColor = isMatin ? 'var(--jaune)' : 'var(--bleu-ciel)';
-            const sessionLabel = isMatin ? '🌅 Matin' : '🌇 Après-midi';
-
-            // Base depuis secteur
-            const secteur = s.secteur || '';
-            const secteurNorm = secteur.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            let base = '', baseBadgeColor = '';
-            if (secteurNorm.includes('jullou')) { base = '📍 Jullouville'; baseBadgeColor = 'var(--vert)'; }
-            else if (secteurNorm.includes('brehal')) { base = '📍 Bréhal'; baseBadgeColor = 'var(--orange)'; }
-            else if (secteurNorm.includes('der') || secteurNorm.includes('cat') || secteurNorm.includes('enfant')) { base = '📍 Granville'; baseBadgeColor = 'var(--bleu-ciel)'; }
-            else if (secteur) { base = '📍 ' + secteur; baseBadgeColor = '#aaa'; }
-
-            // Collègues du même secteur ce jour
-            const collegues = [];
-            if (planning[semaine] && secteurNorm) {
-              for (const [nom, crs] of Object.entries(planning[semaine])) {
-                if (nom.toLowerCase() === prenom.toLowerCase()) continue;
-                for (const c of crs) {
-                  if (c.jour !== jour || c.session !== s.session) continue;
-                  const cNorm = (c.secteur||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-                  // Même catégorie de base
-                  const memeBase = (
-                    (secteurNorm.includes('jullou') && cNorm.includes('jullou')) ||
-                    (secteurNorm.includes('brehal') && cNorm.includes('brehal')) ||
-                    ((secteurNorm.includes('der') || secteurNorm.includes('cat') || secteurNorm.includes('enfant')) &&
-                     (cNorm.includes('der') || cNorm.includes('cat') || cNorm.includes('enfant')))
-                  );
-                  if (memeBase && !collegues.includes(nom)) collegues.push(nom);
-                }
-              }
-            }
-
-            html += `
-              <div style="background:${bgColor}; border-left: 3px solid ${borderColor}; border-radius:6px; padding:7px 10px; margin-bottom:6px;">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                  <span style="font-size:11px; font-weight:700; color:${borderColor};">${sessionLabel}</span>
-                  ${base ? `<span style="font-size:10px; font-weight:600; background:white; border:1px solid ${baseBadgeColor}; color:${baseBadgeColor}; border-radius:20px; padding:1px 8px;">${base}</span>` : ''}
-                </div>
-                <div class="planning-poste">🕐 ${s.poste}</div>
-                ${s.stage_h || s.stage_nom ? `<div class="planning-stage">⛵ ${s.stage_h}${s.stage_h && s.stage_nom ? ' — ' : ''}${s.stage_nom}</div>` : ''}
-                ${s.stagiaire ? `<div style="font-size:11px; color:#888; margin-top:5px;">🎓 En formation : ${s.stagiaire}</div>` : ''}
-              </div>`;
-          }
-        }
-        html += `</div></div>`;
-      }
-      html += `</div>`;
-    });
-
-    container.innerHTML = html;
-
-    // Stocker les semaines pour la navigation
-    window._semainePanels = semaines;
-  }
-
-  function showSemaine(semaine) {
-    const semaines = window._semainePanels || [];
-    semaines.forEach((s, i) => {
-      const panel = document.getElementById('panel-' + i);
-      const tab = document.getElementById('tab-' + i);
-      if (panel) panel.style.display = s === semaine ? 'block' : 'none';
-      if (tab) tab.classList.toggle('active', s === semaine);
-    });
-  }
-
-  async function choisirPrenom(prenom) {
-    prenomActif = prenom;
-    document.getElementById('page-prenom').style.display = 'none';
-    document.getElementById('display-prenom').textContent = prenom;
-    document.getElementById('main-app').classList.add('visible');
-    await renderPlanning(prenom);
-  }
-
+  // ── DÉCONNEXION ──
   function deconnexion() {
-    prenomActif = null;
     document.getElementById('main-app').classList.remove('visible');
     document.getElementById('page-auth').style.display = 'flex';
     document.getElementById('code-input').value = '';
     document.getElementById('auth-error').style.display = 'none';
   }
+
+
+  // ── CAROUSEL PLANNING PDF ──
+  let PDFS_CACHE = null;
+  let pdfIndexActif = 0;
+
+  async function chargerPdfs() {
+    if (PDFS_CACHE) return PDFS_CACHE;
+    try {
+      const res = await fetch('/.netlify/functions/plannings-pdf');
+      const json = await res.json();
+      PDFS_CACHE = json.pdfs || [];
+    } catch(e) {
+      PDFS_CACHE = [];
+    }
+    return PDFS_CACHE;
+  }
+
+  async function renderPlanningPDF() {
+    const container = document.getElementById('planning-content');
+    container.innerHTML = `<div style="text-align:center;padding:40px;color:#aaa;">⏳ Chargement des plannings...</div>`;
+
+    const pdfs = await chargerPdfs();
+
+    if (!pdfs.length) {
+      container.innerHTML = `
+        <div style="text-align:center; padding:40px 20px; color:#aaa;">
+          <div style="font-size:40px; margin-bottom:12px;">📅</div>
+          <div style="font-size:14px; font-weight:600; color:#bbb;">Aucun planning disponible</div>
+          <div style="font-size:12px; margin-top:6px;">Reviens plus tard ou contacte ton responsable de base.</div>
+        </div>`;
+      return;
+    }
+
+    // Sélectionner par défaut la semaine la plus proche d'aujourd'hui (ou la première à venir)
+    const maintenant = Date.now();
+    let idxDefaut = pdfs.findIndex(p => p.timestamp && p.timestamp >= maintenant - 7*24*3600*1000);
+    if (idxDefaut === -1) idxDefaut = 0;
+    pdfIndexActif = idxDefaut;
+
+    let html = `
+      <button class="btn-nouvelle-tache" onclick="ouvrirModal()" style="margin-bottom:16px;">
+        🚨 Signaler un problème
+      </button>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+        <button onclick="pdfPrecedent()" style="background:white; border:2px solid #e0e0e0; border-radius:50%; width:36px; height:36px; font-size:16px; cursor:pointer; color:var(--bleu-marine); flex-shrink:0;">‹</button>
+        <div style="text-align:center; flex:1; padding:0 10px;">
+          <div id="pdf-titre" style="font-size:14px; font-weight:700; color:var(--bleu-marine);"></div>
+          <div id="pdf-compteur" style="font-size:11px; color:#aaa; margin-top:2px;"></div>
+        </div>
+        <button onclick="pdfSuivant()" style="background:white; border:2px solid #e0e0e0; border-radius:50%; width:36px; height:36px; font-size:16px; cursor:pointer; color:var(--bleu-marine); flex-shrink:0;">›</button>
+      </div>
+
+      <div id="pdf-viewer-wrapper" style="background:white; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08); min-height:60vh;">
+      </div>
+
+      <a id="pdf-download-link" href="#" target="_blank" style="display:block; text-align:center; margin-top:12px; padding:12px; background:white; border-radius:10px; color:var(--bleu-ciel); font-size:13px; font-weight:600; text-decoration:none; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        ⬇️ Ouvrir / télécharger le PDF
+      </a>
+    `;
+
+    container.innerHTML = html;
+    window._pdfsListe = pdfs;
+    afficherPdfActif();
+  }
+
+  function afficherPdfActif() {
+    const pdfs = window._pdfsListe || [];
+    if (!pdfs.length) return;
+    const pdf = pdfs[pdfIndexActif];
+
+    document.getElementById('pdf-titre').textContent = '📆 ' + pdf.nom;
+    document.getElementById('pdf-compteur').textContent = `Semaine ${pdfIndexActif + 1} / ${pdfs.length}`;
+
+    const wrapper = document.getElementById('pdf-viewer-wrapper');
+    const url = pdf.url || pdf.webUrl;
+    if (url) {
+      wrapper.innerHTML = `<iframe src="${url}" style="width:100%; height:70vh; border:none;"></iframe>`;
+      document.getElementById('pdf-download-link').href = pdf.webUrl || pdf.url;
+    } else {
+      wrapper.innerHTML = `<div style="padding:40px; text-align:center; color:#aaa;">PDF indisponible</div>`;
+    }
+  }
+
+  function pdfPrecedent() {
+    const pdfs = window._pdfsListe || [];
+    if (!pdfs.length) return;
+    pdfIndexActif = (pdfIndexActif - 1 + pdfs.length) % pdfs.length;
+    afficherPdfActif();
+  }
+
+  function pdfSuivant() {
+    const pdfs = window._pdfsListe || [];
+    if (!pdfs.length) return;
+    pdfIndexActif = (pdfIndexActif + 1) % pdfs.length;
+    afficherPdfActif();
+  }
+
 
   // ── NAVIGATION MODULES ──
   function showModule(id, tab) {
@@ -915,7 +820,7 @@
   // ── BASES MÉTÉO ──
   function showBase(id, btn) {
     document.querySelectorAll('.meteo-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.meteo-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#module-meteo .meteo-tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('base-' + id).classList.add('active');
     btn.classList.add('active');
   }
@@ -937,7 +842,7 @@
     const desc = document.getElementById('tache-desc').value.trim();
     if (!desc) return;
     // TODO: envoyer vers Firestore
-    alert('Signalement envoyé ! Merci ' + prenomActif + ' 👍');
+    alert('Signalement envoyé, merci !');
     fermerModal();
     document.getElementById('tache-desc').value = '';
   }
