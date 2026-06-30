@@ -785,7 +785,8 @@
     const fallbackUrl = pdf.webUrl;
 
     if (directUrl) {
-      wrapper.innerHTML = `<iframe id="pdf-iframe" src="${directUrl}#toolbar=0" style="width:100%; height:60vh; border:none;"></iframe>`;
+      const viewerUrl = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(directUrl);
+      wrapper.innerHTML = `<iframe id="pdf-iframe" src="${viewerUrl}" style="width:100%; height:60vh; border:none;"></iframe>`;
       document.getElementById('pdf-download-link').href = fallbackUrl || directUrl;
     } else if (fallbackUrl) {
       wrapper.innerHTML = `<div style="padding:40px; text-align:center; color:#aaa;">Aperçu indisponible, utilise le bouton télécharger 👇</div>`;
