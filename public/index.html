@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -616,27 +615,8 @@
         + Signaler un problème
       </button>
       <div id="taches-content">
-        <!-- Exemple -->
-        <div class="tache-card">
-          <div class="tache-statut" onclick="toggleTache(this)"></div>
-          <div>
-            <div class="tache-titre">Voile déchirée — Catamaran n°3</div>
-            <div class="tache-meta">Granville · Signalé par Marine · il y a 2h</div>
-            <span class="tache-priorite priorite-haute">Urgent</span>
-          </div>
-        </div>
-        <div class="tache-card">
-          <div class="tache-statut done" onclick="toggleTache(this)"></div>
-          <div>
-            <div class="tache-titre">Manque de gilets taille S</div>
-            <div class="tache-meta">Bréhal · Signalé par Cédric · hier</div>
-            <span class="tache-priorite priorite-normale">Normal</span>
-          </div>
-        </div>
+        <div style="text-align:center;padding:40px;color:#aaa;">⏳ Chargement...</div>
       </div>
-      <p style="color:#aaa; font-size:13px; text-align:center; margin-top:12px;">
-        ⚠️ À synchroniser avec Firestore (Appli Nautisme)
-      </p>
     </div>
 
   </div><!-- /content -->
@@ -653,6 +633,14 @@
       <textarea class="modal-textarea" id="tache-desc" placeholder="Décris le problème..."></textarea>
     </div>
     <div class="modal-field">
+      <label class="modal-label">Type de matériel</label>
+      <input class="modal-input" id="tache-type" placeholder="Ex : Optimist, Catamaran...">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Numéro</label>
+      <input class="modal-input" id="tache-num" placeholder="Ex : 3">
+    </div>
+    <div class="modal-field">
       <label class="modal-label">Base concernée</label>
       <select class="modal-select" id="tache-base">
         <option>Granville</option>
@@ -664,9 +652,13 @@
     <div class="modal-field">
       <label class="modal-label">Priorité</label>
       <select class="modal-select" id="tache-priorite">
-        <option value="normale">Normale</option>
-        <option value="haute">Urgente</option>
+        <option value="Normal">Normale</option>
+        <option value="Urgent">Urgente</option>
       </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Ton prénom</label>
+      <input class="modal-input" id="tache-auteur" placeholder="Ex : Benj">
     </div>
     <div class="modal-actions">
       <button class="modal-cancel" onclick="fermerModal()">Annuler</button>
@@ -709,6 +701,9 @@
   import {
     getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import {
+    getDatabase, ref, push, onValue, update
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBf7bteFT-QKV6qN8OII9M2pFpibB3NiYY",
@@ -723,9 +718,11 @@
 
   const fbApp = initializeApp(firebaseConfig);
   const db = getFirestore(fbApp);
+  const rtdb = getDatabase(fbApp);
 
   // Exposer pour le reste du code (non-module)
   window._firestore = { db, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp };
+  window._rtdb = { rtdb, ref, push, onValue, update };
 
   // Écoute en temps réel des actus (saisonniers_actus pour ne pas interférer avec l'autre appli)
   const actusQuery = query(collection(db, 'saisonniers_actus'), orderBy('date', 'desc'), limit(30));
@@ -753,6 +750,63 @@
     const container = document.getElementById('actu-content');
     if (container) container.innerHTML = `<div style="text-align:center;padding:40px;color:#aaa;">Impossible de charger les actus</div>`;
   });
+
+  // Écoute en temps réel des tâches de maintenance (partagées avec l'Appli Nautisme)
+  const maintenanceRef = ref(rtdb, 'maintenance');
+  onValue(maintenanceRef, (snapshot) => {
+    const container = document.getElementById('taches-content');
+    if (!container) return;
+    const data = snapshot.val();
+    if (!data) {
+      container.innerHTML = `<div style="text-align:center;padding:40px;color:#aaa;">Aucune tâche pour le moment</div>`;
+      return;
+    }
+
+    // Convertir en tableau et trier : non faites d'abord, puis par date desc
+    const taches = Object.entries(data).map(([id, t]) => ({ id, ...t }));
+    taches.sort((a, b) => {
+      if (!!a.done !== !!b.done) return a.done ? 1 : -1;
+      return (b.date || '').localeCompare(a.date || '');
+    });
+
+    let html = '';
+    for (const t of taches) {
+      const titre = [t.type, t.num].filter(Boolean).join(' n°');
+      const urgenceClass = (t.urgency === 'Urgent') ? 'priorite-haute' : 'priorite-normale';
+      const urgenceLabel = (t.urgency === 'Urgent') ? 'Urgent' : 'Normal';
+      html += `
+        <div class="tache-card">
+          <div class="tache-statut ${t.done ? 'done' : ''}" onclick="toggleTacheRTDB('${t.id}', ${!!t.done})"></div>
+          <div>
+            <div class="tache-titre">${titre || 'Signalement'}${t.desc ? ' — ' + t.desc : ''}</div>
+            <div class="tache-meta">${t.base || ''} · Signalé par ${t.author || '?'} · ${t.date || ''}</div>
+            <span class="tache-priorite ${urgenceClass}">${urgenceLabel}</span>
+          </div>
+        </div>`;
+    }
+    container.innerHTML = html;
+  }, (err) => {
+    const container = document.getElementById('taches-content');
+    if (container) container.innerHTML = `<div style="text-align:center;padding:40px;color:#aaa;">Impossible de charger les tâches</div>`;
+  });
+</script>
+
+<script>
+  // ── MAINTENANCE (Realtime Database) ──
+  async function toggleTacheRTDB(id, etatActuel) {
+    const { rtdb, ref, update } = window._rtdb;
+    const auteur = prompt('Ton prénom pour valider :');
+    if (!auteur) return;
+    try {
+      await update(ref(rtdb, 'maintenance/' + id), {
+        done: !etatActuel,
+        doneBy: !etatActuel ? auteur : '',
+        doneDate: !etatActuel ? new Date().toLocaleDateString('fr-FR') : ''
+      });
+    } catch (e) {
+      alert('Erreur lors de la mise à jour');
+    }
+  }
 </script>
 
 <script>
@@ -947,10 +1001,6 @@
   }
 
   // ── MAINTENANCE ──
-  function toggleTache(el) {
-    el.classList.toggle('done');
-  }
-
   function ouvrirModal() {
     document.getElementById('modal-overlay').classList.add('open');
   }
@@ -959,13 +1009,36 @@
     document.getElementById('modal-overlay').classList.remove('open');
   }
 
-  function soumettreSignalement() {
+  async function soumettreSignalement() {
     const desc = document.getElementById('tache-desc').value.trim();
-    if (!desc) return;
-    // TODO: envoyer vers Firestore
-    alert('Signalement envoyé, merci !');
-    fermerModal();
-    document.getElementById('tache-desc').value = '';
+    const type = document.getElementById('tache-type').value.trim();
+    const num = document.getElementById('tache-num').value.trim();
+    const base = document.getElementById('tache-base').value;
+    const urgency = document.getElementById('tache-priorite').value;
+    const author = document.getElementById('tache-auteur').value.trim();
+
+    if (!desc) { alert('Merci de décrire le problème'); return; }
+    if (!author) { alert('Merci d\'indiquer ton prénom'); return; }
+
+    try {
+      const { rtdb, ref, push } = window._rtdb;
+      await push(ref(rtdb, 'maintenance'), {
+        author, base, type, num, urgency, desc,
+        date: new Date().toLocaleDateString('fr-FR'),
+        done: false,
+        doneBy: '',
+        doneDate: '',
+        deadline: ''
+      });
+      alert('Signalement envoyé, merci !');
+      fermerModal();
+      document.getElementById('tache-desc').value = '';
+      document.getElementById('tache-type').value = '';
+      document.getElementById('tache-num').value = '';
+      document.getElementById('tache-auteur').value = '';
+    } catch (e) {
+      alert('Erreur lors de l\'envoi, réessaie.');
+    }
   }
 
   // Fermer modal si clic en dehors
