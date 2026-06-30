@@ -111,6 +111,7 @@ exports.handler = async (event) => {
       .filter(f => f.name && f.name.toLowerCase().endsWith('.pdf'))
       .map(f => ({
         nom: f.name.replace(/\.pdf$/i, ''),
+        id: f.id,
         url: f['@microsoft.graph.downloadUrl'] || null,
         webUrl: f.webUrl || null,
         timestamp: extraireDateDebut(f.name)
