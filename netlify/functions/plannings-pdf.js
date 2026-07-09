@@ -83,10 +83,13 @@ async function listPdfFiles(token, siteId) {
 // pour permettre le tri chronologique
 function extraireDateDebut(nomFichier) {
   const mois = {
-    janvier: 0, février: 1, mars: 2, avril: 3, mai: 4, juin: 5,
-    juillet: 6, août: 7, septembre: 8, octobre: 9, novembre: 10, décembre: 11
+    janvier: 0, fevrier: 1, mars: 2, avril: 3, mai: 4, juin: 5,
+    juillet: 6, aout: 7, septembre: 8, octobre: 9, novembre: 10, decembre: 11
   };
-  const m = nomFichier.toLowerCase().match(/du\s+(\d+)\s+au\s+(\d+)\s+([a-zéû]+)\s+(\d{4})/);
+  // Normaliser : enlever les accents, mettre en minuscules
+  const normalise = nomFichier.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const m = normalise.match(/du\s+(\d+)\s+au\s+(\d+)\s+([a-z]+)\s+(\d{4})/);
   if (!m) return null;
   const jourDebut = parseInt(m[1]);
   const nomMois = m[3];
