@@ -86,17 +86,30 @@ function extraireDateDebut(nomFichier) {
     janvier: 0, fevrier: 1, mars: 2, avril: 3, mai: 4, juin: 5,
     juillet: 6, aout: 7, septembre: 8, octobre: 9, novembre: 10, decembre: 11
   };
-  // Normaliser : enlever les accents, mettre en minuscules
   const normalise = nomFichier.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const m = normalise.match(/du\s+(\d+)\s+au\s+(\d+)\s+([a-z]+)\s+(\d{4})/);
-  if (!m) return null;
-  const jourDebut = parseInt(m[1]);
-  const nomMois = m[3];
-  const annee = parseInt(m[4]);
-  const moisIdx = mois[nomMois];
-  if (moisIdx === undefined) return null;
-  return new Date(annee, moisIdx, jourDebut).getTime();
+
+  // Cas 1 : "du 27 juillet au 2 aout 2026" (deux mois différents)
+  const m2 = normalise.match(/du\s+(\d+)\s+([a-z]+)\s+au\s+\d+\s+[a-z]+\s+(\d{4})/);
+  if (m2) {
+    const jourDebut = parseInt(m2[1]);
+    const nomMois = m2[2];
+    const annee = parseInt(m2[3]);
+    const moisIdx = mois[nomMois];
+    if (moisIdx !== undefined) return new Date(annee, moisIdx, jourDebut).getTime();
+  }
+
+  // Cas 2 : "du 6 au 12 juillet 2026" (même mois)
+  const m1 = normalise.match(/du\s+(\d+)\s+au\s+\d+\s+([a-z]+)\s+(\d{4})/);
+  if (m1) {
+    const jourDebut = parseInt(m1[1]);
+    const nomMois = m1[2];
+    const annee = parseInt(m1[3]);
+    const moisIdx = mois[nomMois];
+    if (moisIdx !== undefined) return new Date(annee, moisIdx, jourDebut).getTime();
+  }
+
+  return null;
 }
 
 exports.handler = async (event) => {
