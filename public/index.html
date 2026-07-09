@@ -705,6 +705,16 @@
   <div class="modal">
     <div class="modal-title">📰 Publier une actu</div>
     <div class="modal-field">
+      <label class="modal-label">Catégorie</label>
+      <select class="modal-select" id="actu-categorie">
+        <option value="Planning">📅 Planning</option>
+        <option value="Météo">🌤️ Météo</option>
+        <option value="Sécurité">⚠️ Sécurité</option>
+        <option value="Matériel">🔧 Matériel</option>
+        <option value="Info générale">ℹ️ Info générale</option>
+      </select>
+    </div>
+    <div class="modal-field">
       <label class="modal-label">Titre</label>
       <input class="modal-input" id="actu-titre-input" placeholder="Ex : Changement de planning">
     </div>
@@ -860,6 +870,7 @@
     document.getElementById('modal-actu-overlay').classList.remove('open');
   }
   async function soumettreActu() {
+    const categorie = document.getElementById('actu-categorie').value;
     const titre = document.getElementById('actu-titre-input').value.trim();
     const texte = document.getElementById('actu-texte-input').value.trim();
     const auteur = document.getElementById('actu-auteur-input').value.trim();
@@ -871,10 +882,19 @@
     try {
       const { db, collection, addDoc, serverTimestamp } = window._firestore;
       await addDoc(collection(db, 'saisonniers_actus'), {
-        titre, texte, auteur,
+        categorie, titre, texte, auteur,
         date: serverTimestamp()
       });
+
+      // Envoyer la notification push
+      fetch('/.netlify/functions/send-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titre, texte, categorie })
+      }).catch(() => {}); // silencieux si erreur
+
       fermerModalActu();
+      document.getElementById('actu-categorie').value = 'Planning';
       document.getElementById('actu-titre-input').value = '';
       document.getElementById('actu-texte-input').value = '';
       document.getElementById('actu-auteur-input').value = '';
@@ -893,13 +913,42 @@
   const CODE_SECRET = "8MN2026";
   const CODE_ACTU = "resp8mn";
 
-  // ── AUTH ──
+  // ── NOTIFICATIONS PUSH ──
+  const VAPID_PUBLIC_KEY = 'BGhpXqgSV2T5T2n8iUBmWLLz1UPVX5knSMv11vtBLpC_7G9q9WcKVI6LuOJhf3mc2H0fb1NyYuMf0MlGfh49aU0';
+
+  async function initNotifications() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return;
+
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        const key = Uint8Array.from(atob(VAPID_PUBLIC_KEY.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: key
+        });
+      }
+
+      // Sauvegarder la subscription dans Firebase RTDB
+      const subJson = sub.toJSON();
+      const { rtdb, ref, push } = window._rtdb;
+      await push(ref(rtdb, 'push_subscriptions'), subJson);
+    } catch (e) {
+      console.log('Push init error:', e);
+    }
+  }
+
+  // Lancer les notifs après connexion
   function verifierCode() {
     const val = document.getElementById('code-input').value.trim().toUpperCase();
     if (val === CODE_SECRET) {
       document.getElementById('page-auth').style.display = 'none';
       document.getElementById('main-app').classList.add('visible');
       renderPlanningPDF();
+      initNotifications();
     } else {
       document.getElementById('auth-error').style.display = 'block';
       document.getElementById('code-input').value = '';
