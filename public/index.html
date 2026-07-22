@@ -973,9 +973,8 @@
   let pdfIndexActif = 0;
 
   async function chargerPdfs() {
-    if (PDFS_CACHE) return PDFS_CACHE;
     try {
-      const res = await fetch('/.netlify/functions/plannings-pdf');
+      const res = await fetch('/.netlify/functions/plannings-pdf?t=' + Date.now());
       const json = await res.json();
       PDFS_CACHE = json.pdfs || [];
     } catch(e) {
